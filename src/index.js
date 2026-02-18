@@ -23,6 +23,11 @@ async function start() {
   const app = express();
   app.use(cors());
 
+  // Health check endpoint
+  app.get('/', (req, res) => {
+    res.json({ message: 'COMP3133 Assignment 1 API is running', graphql: '/graphql' });
+  });
+
   const server = new ApolloServer({
     typeDefs,
     resolvers
@@ -35,8 +40,8 @@ async function start() {
     .connect(DB_CONNECTION)
     .then(() => {
       console.log('Connected to MongoDB');
-      app.listen(PORT, () => {
-        console.log(`Server running at http://localhost:${PORT}${server.graphqlPath}`);
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on port ${PORT}${server.graphqlPath}`);
       });
     })
     .catch(err => console.error('Mongo error:', err.message));
