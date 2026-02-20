@@ -7,10 +7,10 @@ const cors = require('cors');
 const typeDefs = require('./schema/typeDefs');
 const resolvers = require('./resolvers');
 
-const DB_NAME = "comp3133_101504303_Assigment1";
-const DB_USER_NAME = "uzma_db_user";
-const DB_PASSWORD = "h2UiwgTbXxAJJbpk";
-const CLUSTER_ID = "w2wmqnu";
+const DB_NAME = process.env.DB_NAME || "comp3133_101504303_Assigment1";
+const DB_USER_NAME = process.env.DB_USER_NAME || "uzma_db_user";
+const DB_PASSWORD = process.env.DB_PASSWORD || "h2UiwgTbXxAJJbpk";
+const CLUSTER_ID = process.env.CLUSTER_ID || "w2wmqnu";
 
 const DB_CONNECTION =
   `mongodb+srv://${DB_USER_NAME}:${DB_PASSWORD}` +

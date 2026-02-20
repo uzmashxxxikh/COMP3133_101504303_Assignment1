@@ -3,6 +3,15 @@ const jwt = require('jsonwebtoken');
 const { GraphQLScalarType, Kind } = require('graphql');
 const User = require('../models/User');
 const Employee = require('../models/Employee');
+const { uploadToCloudinary } = require('../utils/uploadToCloudinary');
+const { 
+  isValidEmail, 
+  isValidPassword, 
+  isValidUsername, 
+  isValidSalary,
+  isValidGender,
+  isValidDate
+} = require('../utils/validators');
 
 const dateScalar = new GraphQLScalarType({
   name: 'Date',
@@ -88,6 +97,18 @@ const resolvers = {
     async signup(_, { input }) {
       const { username, email, password } = input;
 
+      if (!isValidUsername(username)) {
+        throw new Error('Username must be between 3 and 50 characters');
+      }
+
+      if (!isValidEmail(email)) {
+        throw new Error('Invalid email format');
+      }
+
+      if (!isValidPassword(password)) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+
       const existing = await User.findOne({ $or: [{ username }, { email }] });
       if (existing) {
         throw new Error('Username or email already exists');
@@ -113,11 +134,36 @@ const resolvers = {
     },
 
     async addEmployee(_, { input }) {
-      if (input.salary < 1000) {
+      if (!isValidEmail(input.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      if (!isValidSalary(input.salary)) {
         throw new Error('Salary must be >= 1000');
       }
 
-      const employee = new Employee({ ...input });
+      if (!isValidGender(input.gender)) {
+        throw new Error('Gender must be Male, Female, or Other');
+      }
+
+      if (!isValidDate(input.date_of_joining)) {
+        throw new Error('Invalid date format');
+      }
+
+      let photoUrl = input.employee_photo;
+      if (input.employee_photo) {
+        try {
+          photoUrl = await uploadToCloudinary(input.employee_photo);
+        } catch (error) {
+          console.error('Photo upload failed:', error.message);
+          photoUrl = null;
+        }
+      }
+
+      const employee = new Employee({ 
+        ...input,
+        employee_photo: photoUrl
+      });
       await employee.save();
 
       return {
@@ -129,6 +175,15 @@ const resolvers = {
     async updateEmployeeById(_, { id, input }) {
       if (input.salary && input.salary < 1000) {
         throw new Error('Salary must be >= 1000');
+      }
+
+      if (input.employee_photo) {
+        try {
+          input.employee_photo = await uploadToCloudinary(input.employee_photo);
+        } catch (error) {
+          console.error('Photo upload failed:', error.message);
+          delete input.employee_photo;
+        }
       }
 
       const emp = await Employee.findByIdAndUpdate(
